@@ -88,9 +88,9 @@ RCT_EXPORT_METHOD(openGTViewWithanimated:(BOOL)animated
     //验证高度约束
     [_manager useGTViewWithHeightConstraintType:GTViewHeightConstraintLargeViewWithLogo];
     //使用背景模糊
-    [_manager useVisualViewWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+    [_manager useVisualViewWithEffect:nil];
     //验证背景颜色(例:yellow rgb(255,200,50))
-    [_manager setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.3]];
+    [_manager setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.6]];
   }
   return _manager;
 }
