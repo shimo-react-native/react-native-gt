@@ -1,17 +1,21 @@
-/**
- * Stub of RNGeetestModule for Android.
- *
- * @providesModule RNGeetestModule
- * @flow
- */
-'use strict';
+import { NativeModules } from 'react-native';
 
-var warning = require('fbjs/lib/warning');
+const GeetestModule = NativeModules.GeetestModule;
 
-var RNGeetestModule = {
-  test: function() {
-    warning('Not yet implemented for Android.');
-  }
+function setDebugMode(debugMode) {
+  return GeetestModule.setDebugMode(debugMode);
+}
+
+function configure(captchaId, challenge, successCode) {
+  return GeetestModule.config(captchaId, challenge, successCode);
+}
+
+function openGTView(animated) {
+  return GeetestModule.openGTView(animated);
+}
+
+export default {
+  setDebugMode,
+  configure,
+  openGTView
 };
-
-module.exports = RNGeetestModule;

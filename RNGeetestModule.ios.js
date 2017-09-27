@@ -1,19 +1,21 @@
-/**
- * @providesModule RNGeetestModule
- * @flow
- */
-'use strict';
+import { NativeModules } from 'react-native';
 
-var NativeRNGeetestModule = require('NativeModules').RNGeetestModule;
+const GeetestModule = NativeModules.RNGeetestModule;
 
-/**
- * High-level docs for the RNGeetestModule iOS API can be written here.
- */
+function setDebugMode(debugMode) {
+  return GeetestModule.setDebugMode(debugMode);
+}
 
-var RNGeetestModule = {
-  test: function() {
-    NativeRNGeetestModule.test();
-  }
+function configure(captchaId, challenge, successCode) {
+  return GeetestModule.config(captchaId, challenge, successCode);
+}
+
+function openGTView(animated) {
+  return GeetestModule.openGTView(animated);
+}
+
+export default {
+  setDebugMode,
+  configure,
+  openGTView
 };
-
-module.exports = RNGeetestModule;
