@@ -26,12 +26,12 @@ RCT_EXPORT_METHOD(setPresentType:(GTPresentType)type) {
   [self.manager useGTViewWithPresentType:type];
 }
 
-RCT_EXPORT_METHOD(configureGTest:(NSString *)captchaId
+RCT_EXPORT_METHOD(configure:(NSString *)captchaId
                   challenge:(NSString *)challenge
-                  success:(NSNumber *)successCode
+                  success:(NSInteger)successCode
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject) {
-  if ([self.manager configureGTest:captchaId challenge:challenge success:successCode]) {
+  if ([self.manager configureGTest:captchaId challenge:challenge success:@(successCode)]) {
     if (resolve) {
       resolve(@{});
     }
@@ -42,7 +42,7 @@ RCT_EXPORT_METHOD(configureGTest:(NSString *)captchaId
   }
 }
 
-RCT_EXPORT_METHOD(openGTViewWithanimated:(BOOL)animated
+RCT_EXPORT_METHOD(openGTView:(BOOL)animated
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject) {
     GTCallFinishBlock finishBlock = ^(NSString *code, NSDictionary *result, NSString *message) {
@@ -75,6 +75,12 @@ RCT_EXPORT_METHOD(openGTViewWithanimated:(BOOL)animated
                                 animated:(BOOL)animated];
 }
 
+#pragma mark - GTManageDelegate
+
+- (void)GTNetworkErrorHandler:(NSError *)error {
+    
+}
+
 #pragma mark - Getter
 
 - (GTManager *)manager {
@@ -90,7 +96,7 @@ RCT_EXPORT_METHOD(openGTViewWithanimated:(BOOL)animated
     //使用背景模糊
     [_manager useVisualViewWithEffect:nil];
     //验证背景颜色(例:yellow rgb(255,200,50))
-    [_manager setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.6]];
+    [_manager setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.3]];
   }
   return _manager;
 }

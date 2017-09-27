@@ -7,12 +7,15 @@ import android.util.Log;
 
 import com.example.sdk.Geetest;
 import com.example.sdk.GtDialog;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -30,6 +33,12 @@ public class GeetestModule extends ReactContextBaseJavaModule {
     private Geetest captcha;
     private Promise mPromise;
 
+    private String mChallenge;
+    private String mCaptchaId;
+    private int mSuccess;
+
+    private Promise mOpenGTViewpromise;
+
     public GeetestModule(ReactApplicationContext reactContext) {
         super(reactContext);
     }
@@ -45,14 +54,34 @@ public class GeetestModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void configureGTest(String captchaId, String challenge) {
+    public void configure(String captchaId, String challenge, int success, Promise promise) {
+        mChallenge = challenge;
+        mCaptchaId = captchaId;
+        mSuccess = success;
 
+        WritableMap map = Arguments.createMap();
+        promise.resolve(map);
     }
 
     @ReactMethod
-    public void openGTView(Boolean animated, Promise promise) {
-        JSONObject params = new JSONObject();
-        openGtTest(getCurrentActivity(), params);
+    public void openGTView(Boolean animated, final Promise promise) {
+        mPromise = promise;
+        getCurrentActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject params = new JSONObject();
+                try {
+                    params.put("challenge", mChallenge);
+                    params.put("success", mSuccess);
+                    params.put("gt", mCaptchaId);
+
+                    openGtTest(getCurrentActivity(), params);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    mPromise.reject("400", "open GTView failed");
+                }
+            }
+        });
     }
 
     @ReactMethod
@@ -94,7 +123,6 @@ public class GeetestModule extends ReactContextBaseJavaModule {
     }
 
     class GtAppDlgTask extends AsyncTask<Void, Void, JSONObject> {
-
         @Override
         protected JSONObject doInBackground(Void... params) {
             Log.i("geetest", "geetest checking server");
@@ -116,7 +144,6 @@ public class GeetestModule extends ReactContextBaseJavaModule {
 
                     // 执行此处网站主的备用验证码方案
                 }
-
             } else {
                 Log.e("geetest", "Can't Get Data from API_1");
             }
@@ -169,16 +196,33 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             @Override
             public void gtResult(boolean success, String result) {
                 if (success) {
-                    GtAppValidateTask gtAppValidateTask = new GtAppValidateTask();
-                    mGtAppValidateTask = gtAppValidateTask;
-                    mGtAppValidateTask.execute(result);
+                    try {
+                        JSONObject resJson = new JSONObject(result);
+                        WritableMap resultMap = Arguments.createMap();
+                        resultMap.putString("geetest_challenge", resJson.getString("geetest_challenge"));
+                        resultMap.putString("geetest_validate", resJson.getString("geetest_validate"));
+                        resultMap.putString("geetest_seccode", resJson.getString("geetest_seccode"));
+
+                        WritableMap map = Arguments.createMap();
+                        map.putString("code", "1");
+                        map.putMap("result", resultMap);
+                        map.putString("message", "验证成功");
+
+                        mPromise.resolve(map);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        mPromise.reject("400", "failed");
+                    }
+
                 } else {
                     // TODO 验证失败
+                    mPromise.reject("400", "failed");
                 }
             }
 
             @Override
             public void gtCallClose() {
+                mPromise.reject("400", "验证取消");
             }
 
             @Override
@@ -195,6 +239,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             @Override
             public void gtError() {
                 Log.e("geetest", "Fatal Error Did Occur.");
+                mPromise.reject("400", "failed");
             }
         });
     }

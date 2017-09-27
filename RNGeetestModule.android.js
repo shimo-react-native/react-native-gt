@@ -7,7 +7,7 @@ function setDebugMode(debugMode) {
 }
 
 function configure(captchaId, challenge, successCode) {
-  return GeetestModule.config(captchaId, challenge, successCode);
+  return GeetestModule.configure(captchaId, challenge, successCode);
 }
 
 function openGTView(animated) {

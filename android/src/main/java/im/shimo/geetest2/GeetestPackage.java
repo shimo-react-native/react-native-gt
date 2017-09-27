@@ -28,6 +28,6 @@ public class GeetestPackage implements ReactPackage {
 
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-        return null;
+        return Collections.emptyList();
     }
 }
