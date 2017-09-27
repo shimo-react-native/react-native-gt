@@ -29,5 +29,5 @@ dependencies {
     compile 'gtapp.android:sdk:3.0.0'
     compile 'com.android.support:appcompat-v7:26.+'
     testCompile 'junit:junit:4.12'
-    compile 'com.facebook.react:react-native:0.48.4'
+    compile 'com.facebook.react:react-native:+'
 }
