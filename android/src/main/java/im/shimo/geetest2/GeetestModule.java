@@ -95,19 +95,19 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             @Override
             public void readContentTimeout() {
                 mGtAppDlgTask.cancel(true);
-                Log.e("geetest", "read content time out");
+                Log.e("GeetestModule", "read content time out");
             }
 
             @Override
             public void submitPostDataTimeout() {
                 //TODO 提交二次验证超时
                 mGtAppValidateTask.cancel(true);
-                Log.e("geetest", "submit error");
+                Log.e("GeetestModule", "submit error");
             }
 
             @Override
             public void receiveInvalidParameters() {
-                Log.e("geetest", "ecieve invalid parameters");
+                Log.e("GeetestModule", "ecieve invalid parameters");
             }
         });
 
@@ -125,7 +125,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
     class GtAppDlgTask extends AsyncTask<Void, Void, JSONObject> {
         @Override
         protected JSONObject doInBackground(Void... params) {
-            Log.i("geetest", "geetest checking server");
+            Log.i("GeetestModule", "geetest checking server");
             return captcha.checkServer();
         }
 
@@ -134,18 +134,18 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             if (params != null) {
                 // 根据captcha.getSuccess()的返回值 自动推送正常或者离线验证
                 if (captcha.getSuccess()) {
-                    Log.i("geetest", "captcha get success");
+                    Log.i("GeetestModule", "captcha get success");
                     openGtTest(getCurrentActivity(), params);
                 } else {
                     // TODO 从API_1获得极验服务宕机或不可用通知, 使用备用验证或静态验证
                     // 静态验证依旧调用上面的openGtTest(_, _, _), 服务器会根据getSuccess()的返回值, 自动切换
                     // openGtTest(getCurrentActivity(), params);
-                    Log.e("geetest", "Geetest Server is Down.");
+                    Log.e("GeetestModule", "Geetest Server is Down.");
 
                     // 执行此处网站主的备用验证码方案
                 }
             } else {
-                Log.e("geetest", "Can't Get Data from API_1");
+                Log.e("GeetestModule", "Can't Get Data from API_1");
             }
         }
     }
@@ -175,8 +175,8 @@ public class GeetestModule extends ReactContextBaseJavaModule {
         }
     }
 
-    public void openGtTest(Context ctx, JSONObject params) {
-        Log.i("geetest", "open geetest");
+    private void openGtTest(Context ctx, JSONObject params) {
+        Log.i("GeetestModule", "open geetest");
         GtDialog dialog = new GtDialog(ctx, params);
         // 启用debug可以在webview上看到验证过程的一些数据
         dialog.setDebug(this.debug);
@@ -185,7 +185,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             @Override
             public void onCancel(DialogInterface dialog) {
                 // 取消验证
-                Log.i("geetest", "user close the geetest.");
+                Log.i("GeetestModule", "user close the geetest.");
                 mPromise.reject("400", "cancel");
                 sendValidationEvent(false);
             }
@@ -211,12 +211,11 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                         mPromise.resolve(map);
                     } catch (JSONException e) {
                         e.printStackTrace();
-                        mPromise.reject("400", "failed");
                     }
 
                 } else {
-                    // TODO 验证失败
-                    mPromise.reject("400", "failed");
+                    // 验证失败
+                    Log.i("GeetestModule", "geetest verify failed");
                 }
             }
 
@@ -228,17 +227,17 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             @Override
             public void gtCallReady(Boolean status) {
                 if (status) {
-                    //TODO 验证加载完成
-                    Log.i("geetest", "geetest finish load");
+                    // 验证加载完成
+                    Log.i("GeetestModule", "geetest finish load");
                 } else {
-                    //TODO 验证加载超时,未准备完成
-                    Log.e("geetest", "there's a network jam");
+                    // 验证加载超时,未准备完成
+                    Log.e("GeetestModule", "there's a network jam");
                 }
             }
 
             @Override
             public void gtError() {
-                Log.e("geetest", "Fatal Error Did Occur.");
+                Log.e("GeetestModule", "Fatal Error Did Occur.");
                 mPromise.reject("400", "failed");
             }
         });
