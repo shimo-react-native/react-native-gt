@@ -55,17 +55,14 @@ RCT_EXPORT_METHOD(openGTView:(BOOL)animated
                           });
             }
         } else {
-            NSLog(@"geetest: code : %@, message : %@", code, message);
-            if (reject) {
-                reject(code, message, nil);
-            }
+            NSLog(@"[GeetestModule]: code : %@, message : %@", code, message);
         }
     };
     
     // 用户关闭验证时调用
     GTCallCloseBlock closeBlock = ^{
         //用户关闭验证后执行的方法
-        NSLog(@"geetest: close");
+        NSLog(@"[GeetestModule]: close");
         if (reject) {
             reject(@"close", @"User closed validation", nil);
         }
@@ -78,7 +75,7 @@ RCT_EXPORT_METHOD(openGTView:(BOOL)animated
 #pragma mark - GTManageDelegate
 
 - (void)GTNetworkErrorHandler:(NSError *)error {
-    
+    NSLog(@"[GeetestModule]: network error: %@", error.localizedDescription);
 }
 
 #pragma mark - Getter
