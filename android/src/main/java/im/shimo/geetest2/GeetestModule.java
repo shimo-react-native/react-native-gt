@@ -1,8 +1,12 @@
 package im.shimo.geetest2;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.example.sdk.Geetest;
@@ -14,18 +18,26 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.modules.core.PermissionAwareActivity;
+import com.facebook.react.modules.core.PermissionListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * Created by bell on 2017/9/27.
  */
 
 public class GeetestModule extends ReactContextBaseJavaModule {
+    private static final String E_CALLBACK_ERROR = "E_CALLBACK_ERROR";
+    private static final String E_PERMISSIONS_MISSING = "E_PERMISSIONS_MISSING";
 
     private Boolean debug = false;
     private GtAppDlgTask mGtAppDlgTask;
@@ -66,22 +78,17 @@ public class GeetestModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void openGTView(Boolean animated, final Promise promise) {
         mPromise = promise;
-        getCurrentActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                JSONObject params = new JSONObject();
-                try {
-                    params.put("challenge", mChallenge);
-                    params.put("success", mSuccess);
-                    params.put("gt", mCaptchaId);
 
-                    openGtTest(getCurrentActivity(), params);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    mPromise.reject("400", "open GTView failed");
-                }
-            }
-        });
+        JSONObject params = new JSONObject();
+        try {
+            params.put("challenge", mChallenge);
+            params.put("success", mSuccess);
+            params.put("gt", mCaptchaId);
+            openGtTest(getCurrentActivity(), params);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            mPromise.reject("400", "open GTView failed");
+        }
     }
 
     @ReactMethod
@@ -100,7 +107,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
 
             @Override
             public void submitPostDataTimeout() {
-                //TODO 提交二次验证超时
+                // 提交二次验证超时
                 mGtAppValidateTask.cancel(true);
                 Log.e("GeetestModule", "submit error");
             }
@@ -137,7 +144,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                     Log.i("GeetestModule", "captcha get success");
                     openGtTest(getCurrentActivity(), params);
                 } else {
-                    // TODO 从API_1获得极验服务宕机或不可用通知, 使用备用验证或静态验证
+                    // 从API_1获得极验服务宕机或不可用通知, 使用备用验证或静态验证
                     // 静态验证依旧调用上面的openGtTest(_, _, _), 服务器会根据getSuccess()的返回值, 自动切换
                     // openGtTest(getCurrentActivity(), params);
                     Log.e("GeetestModule", "Geetest Server is Down.");
@@ -175,7 +182,23 @@ public class GeetestModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private void openGtTest(Context ctx, JSONObject params) {
+    private void openGtTest(final Context ctx, final JSONObject params) {
+        final Activity activity = getCurrentActivity();
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                permissionsCheck(activity, mPromise, Arrays.asList(Manifest.permission.READ_PHONE_STATE), new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        doOpenGtTest(ctx, params);
+                        return null;
+                    }
+                });
+            }
+        });
+    }
+
+    private void doOpenGtTest(Context ctx, JSONObject params) {
         Log.i("GeetestModule", "open geetest");
         GtDialog dialog = new GtDialog(ctx, params);
         // 启用debug可以在webview上看到验证过程的一些数据
@@ -192,7 +215,6 @@ public class GeetestModule extends ReactContextBaseJavaModule {
         });
 
         dialog.setGtListener(new GtDialog.GtListener() {
-
             @Override
             public void gtResult(boolean success, String result) {
                 if (success) {
@@ -212,7 +234,6 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-
                 } else {
                     // 验证失败
                     Log.i("GeetestModule", "geetest verify failed");
@@ -241,5 +262,47 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                 mPromise.reject("400", "failed");
             }
         });
+    }
+
+    private void permissionsCheck(final Activity activity, final Promise promise, final List<String> requiredPermissions, final Callable<Void> callback) {
+
+        List<String> missingPermissions = new ArrayList<>();
+
+        for (String permission : requiredPermissions) {
+            int status = ActivityCompat.checkSelfPermission(activity, permission);
+            if (status != PackageManager.PERMISSION_GRANTED) {
+                missingPermissions.add(permission);
+            }
+        }
+
+        if (!missingPermissions.isEmpty()) {
+            ((PermissionAwareActivity) activity).requestPermissions(missingPermissions.toArray(new String[missingPermissions.size()]), 1, new PermissionListener() {
+
+                @Override
+                public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+                    if (requestCode == 1) {
+                        for (int grantResult : grantResults) {
+                            if (grantResult == PackageManager.PERMISSION_DENIED) {
+                                promise.reject(E_PERMISSIONS_MISSING, "Required permission missing");
+                                return true;
+                            }
+                        }
+                        try {
+                            callback.call();
+                        } catch (Exception e) {
+                            promise.reject(E_CALLBACK_ERROR, "Unknown error", e);
+                        }
+                    }
+                    return true;
+                }
+            });
+            return;
+        }
+        // all permissions granted
+        try {
+            callback.call();
+        } catch (Exception e) {
+            promise.reject(E_CALLBACK_ERROR, "Unknown error", e);
+        }
     }
 }
