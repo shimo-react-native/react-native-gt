@@ -67,3 +67,11 @@ iOSInjectionProject/
 
 # Jetbrains
 .idea
+
+# node
+node_modules
+npm-debug.log
+package-lock.json
+yarn-error.log
+yarn.lock
+
