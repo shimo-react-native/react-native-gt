@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nullable;
+
 /**
  * Created by bell on 2017/9/27.
  */
@@ -87,7 +89,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             openGtTest(getCurrentActivity(), params);
         } catch (JSONException e) {
             e.printStackTrace();
-            mPromise.reject("400", "open GTView failed");
+            reject("400", "open GTView failed");
         }
     }
 
@@ -168,7 +170,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                 validateParams.put("geetest_seccode", resJson.getString("geetest_seccode"));
                 String response = captcha.submitPostData(validateParams, "utf-8");
                 // 验证通过, 获取二次验证响应, 根据响应判断验证是否通过完整验证
-                mPromise.resolve(null);
+                resolve(null);
                 sendValidationEvent(true);
                 return response;
             } catch (Exception e) {
@@ -184,10 +186,13 @@ public class GeetestModule extends ReactContextBaseJavaModule {
 
     private void openGtTest(final Context ctx, final JSONObject params) {
         final Activity activity = getCurrentActivity();
+        if (activity == null) {
+            return;
+        }
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                permissionsCheck(activity, mPromise, Arrays.asList(Manifest.permission.READ_PHONE_STATE), new Callable<Void>() {
+                permissionsCheck(activity, Arrays.asList(Manifest.permission.READ_PHONE_STATE), new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
                         doOpenGtTest(ctx, params);
@@ -209,7 +214,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             public void onCancel(DialogInterface dialog) {
                 // 取消验证
                 Log.i("GeetestModule", "user close the geetest.");
-                mPromise.reject("400", "cancel");
+                reject("400", "cancel");
                 sendValidationEvent(false);
             }
         });
@@ -230,7 +235,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                         map.putMap("result", resultMap);
                         map.putString("message", "验证成功");
 
-                        mPromise.resolve(map);
+                        resolve(map);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -242,7 +247,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
 
             @Override
             public void gtCallClose() {
-                mPromise.reject("400", "验证取消");
+                reject("400", "验证取消");
             }
 
             @Override
@@ -259,12 +264,33 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             @Override
             public void gtError() {
                 Log.e("GeetestModule", "Fatal Error Did Occur.");
-                mPromise.reject("400", "failed");
+                reject("400", "failed");
             }
         });
     }
 
-    private void permissionsCheck(final Activity activity, final Promise promise, final List<String> requiredPermissions, final Callable<Void> callback) {
+    private void resolve(@Nullable Object value) {
+        if (mPromise != null) {
+            mPromise.resolve(value);
+            mPromise = null;
+        }
+    }
+
+    private void reject(String code, String message) {
+        if (mPromise != null) {
+            mPromise.reject(code, message);
+            mPromise = null;
+        }
+    }
+
+    private void reject(String code, String message, Throwable e) {
+        if (mPromise != null) {
+            mPromise.reject(code, message, e);
+            mPromise = null;
+        }
+    }
+
+    private void permissionsCheck(final Activity activity, final List<String> requiredPermissions, final Callable<Void> callback) {
 
         List<String> missingPermissions = new ArrayList<>();
 
@@ -283,14 +309,14 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                     if (requestCode == 1) {
                         for (int grantResult : grantResults) {
                             if (grantResult == PackageManager.PERMISSION_DENIED) {
-                                promise.reject(E_PERMISSIONS_MISSING, "Required permission missing");
+                                reject(E_PERMISSIONS_MISSING, "Required permission missing");
                                 return true;
                             }
                         }
                         try {
                             callback.call();
                         } catch (Exception e) {
-                            promise.reject(E_CALLBACK_ERROR, "Unknown error", e);
+                            reject(E_CALLBACK_ERROR, "Unknown error", e);
                         }
                     }
                     return true;
@@ -302,7 +328,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
         try {
             callback.call();
         } catch (Exception e) {
-            promise.reject(E_CALLBACK_ERROR, "Unknown error", e);
+            reject(E_CALLBACK_ERROR, "Unknown error", e);
         }
     }
 }
