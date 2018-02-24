@@ -59,12 +59,11 @@ RCT_EXPORT_METHOD(openGTView:(BOOL)animated
         }
     };
     
-    // 用户关闭验证时调用
+    // 用户取消验证时调用
     GTCallCloseBlock closeBlock = ^{
-        //用户关闭验证后执行的方法
         NSLog(@"[GeetestModule]: close");
         if (reject) {
-            reject(@"close", @"User closed validation", nil);
+            reject(@"E_CANCEL", @"User cancel validation", nil);
         }
     };
     [self.manager openGTViewAddFinishHandler:finishBlock

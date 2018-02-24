@@ -89,7 +89,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             openGtTest(getCurrentActivity(), params);
         } catch (JSONException e) {
             e.printStackTrace();
-            reject("400", "open GTView failed");
+            reject("E_OPEN_FAILED", "open geetest failed");
         }
     }
 
@@ -187,6 +187,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
     private void openGtTest(final Context ctx, final JSONObject params) {
         final Activity activity = getCurrentActivity();
         if (activity == null) {
+            reject("E_OPEN_FAILED", "open geetest failed");
             return;
         }
         activity.runOnUiThread(new Runnable() {
@@ -214,7 +215,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
             public void onCancel(DialogInterface dialog) {
                 // 取消验证
                 Log.i("GeetestModule", "user close the geetest.");
-                reject("400", "cancel");
+                reject("E_CANCEL", "geetest verify canceled");
                 sendValidationEvent(false);
             }
         });
@@ -247,7 +248,7 @@ public class GeetestModule extends ReactContextBaseJavaModule {
 
             @Override
             public void gtCallClose() {
-                reject("400", "验证取消");
+                reject("E_CANCEL", "geetest verify canceled");
             }
 
             @Override
@@ -258,13 +259,13 @@ public class GeetestModule extends ReactContextBaseJavaModule {
                 } else {
                     // 验证加载超时,未准备完成
                     Log.e("GeetestModule", "there's a network jam");
+                    reject("E_LOAD_FAILED", "geetest load failed");
                 }
             }
 
             @Override
             public void gtError() {
                 Log.e("GeetestModule", "Fatal Error Did Occur.");
-                reject("400", "failed");
             }
         });
     }
