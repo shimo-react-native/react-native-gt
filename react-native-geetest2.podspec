@@ -15,4 +15,6 @@ Pod::Spec.new do |s|
 
   s.dependency 'React'
   s.dependency 'GeeTestSDK'
+
+  s.static_framework      = true
 end
