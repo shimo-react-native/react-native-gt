@@ -1,17 +1,11 @@
-import { NativeModules } from 'react-native';
-
-const GeetestModule = NativeModules.RNGeetestModule;
-
-function setDebugMode(debugMode) {
-  return GeetestModule.setDebugMode(debugMode);
-}
+function setDebugMode(debugMode) {}
 
 function configure(captchaId, challenge, successCode) {
-  return GeetestModule.configure(captchaId, challenge, successCode);
+  return Promise.resolve({});
 }
 
 function openGTView(animated) {
-  return GeetestModule.openGTView(animated);
+  return Promise.reject(new Error('Not Support!'));
 }
 
 export default {
